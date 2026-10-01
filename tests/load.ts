@@ -12,7 +12,7 @@ const ack=(s:Socket,event:string,data:any)=>new Promise<any>((resolve,reject)=>s
 try{
  const port=await server.listen(0),url=`http://127.0.0.1:${port}`,quiz=newQuiz();quiz.title='Нагрузочная репетиция';quiz.rounds[0].questions=Array.from({length:questionCount},()=>({...newQuestion(),duration:5}));const game=await server.engine.create(quiz);
  for(let i=0;i<count;i++){const s=io(url,{transports:['websocket'],forceNew:true});sockets.push(s);await new Promise<void>((res,rej)=>{s.once('connect',res);s.once('connect_error',rej);});const r=await ack(s,'session:join',{code:game.code,nickname:`Гость ${String(i+1).padStart(3,'0')}`});if(!r.ok)throw Error(r.error);}
- peakConnections=server.io.engine.clientsCount;for(let i=0;i<3;i++)server.engine.action({sessionId:game.id,action:'next'});
+ peakConnections=server.io.engine.clientsCount;for(let i=0;i<2;i++)server.engine.action({sessionId:game.id,action:'next'});
  const start=performance.now();for(let question=0;question<questionCount;question++){
   // The first burst runs against a real five-second deadline. The remaining
   // 49 bursts move the server deadline to the final two seconds to stress the

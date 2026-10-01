@@ -19,19 +19,18 @@ describe('Обложка и свободные ответы',()=>{
   expect(saved.correct).toHaveLength(100);expect(isCorrect(saved,' ответ 100 ')).toBe(true);
   q.correct.push('Ответ 101');expect(quizSchema.safeParse(quiz).success).toBe(false);
  });
- it('показывает отдельную обложку перед заставкой раунда и сохраняет её состояние',async()=>{
+ it('начинает первый раунд прямо из лобби и сохраняет состояние',async()=>{
   const {store,engine}=fixture(),quiz=newQuiz();quiz.cover='/uploads/cover.png';
   const game=await engine.create(quiz);engine.action({sessionId:game.id,action:'next'});
   const restored=new Engine(store,'http://localhost:3000');
   const screen=restored.snapshot(game.id,'screen');
-  expect(screen.phase).toBe('QUIZ_INTRO');expect(screen.cover).toBe(quiz.cover);expect(screen.question).toBeNull();expect(screen.timer).toBeNull();
-  restored.action({sessionId:game.id,action:'next'});expect(restored.get(game.id).phase).toBe('ROUND_INTRO');
+  expect(screen.phase).toBe('ROUND_INTRO');expect(screen.cover).toBe(quiz.cover);expect(screen.question).toBeNull();expect(screen.timer).toBeNull();
   restored.action({sessionId:game.id,action:'next'});expect(restored.get(game.id).phase).toBe('QUESTION_OPEN');
  });
  it.each(['text','number','info'] as const)('не отправляет старые кнопки на экран %s-вопроса',async type=>{
   const {engine}=fixture(),quiz=newQuiz(),q=quiz.rounds[0].questions[0];q.type=type;q.correct=type==='text'?['Верно']:[];
   const game=await engine.create(quiz);
-  for(let i=0;i<3;i++)engine.action({sessionId:game.id,action:'next'});
+  for(let i=0;i<2;i++)engine.action({sessionId:game.id,action:'next'});
   for(const role of ['host','screen','player'] as const)expect(engine.snapshot(game.id,role).question?.options).toEqual([]);
   expect(q.options).toHaveLength(2); // Existing quizzes can retain hidden choice data without displaying it.
   if(type!=='info'){
@@ -39,5 +38,14 @@ describe('Обложка и свободные ответы',()=>{
    engine.action({sessionId:game.id,action:'lock'});
    expect(engine.snapshot(game.id,'screen').stats).toEqual(type==='text'?{'Верно':1}:{'0':1});
   }
+ });
+ it('продолжает старую сессию, сохранённую на отдельной обложке',async()=>{
+  const {store,engine}=fixture(),game=await engine.create(newQuiz());
+  game.phase='QUIZ_INTRO';store.saveGame(game);
+  const restored=new Engine(store,'http://localhost:3000');
+  restored.action({sessionId:game.id,action:'next'});
+  expect(restored.get(game.id).phase).toBe('ROUND_INTRO');
+  restored.action({sessionId:game.id,action:'next'});
+  expect(restored.get(game.id).phase).toBe('QUESTION_OPEN');
  });
 });

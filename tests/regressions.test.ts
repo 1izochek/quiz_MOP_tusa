@@ -29,7 +29,7 @@ async function game(twoRounds = false) {
 describe('Регрессии рабочего игрового движка', () => {
   it('реальный движок проходит весь раунд и финал', async () => {
     const {session, act} = await game();
-    for (const phase of ['QUIZ_INTRO', 'ROUND_INTRO', 'QUESTION_OPEN', 'QUESTION_LOCKED', 'ANSWER_REVEAL', 'ROUND_LEADERBOARD', 'FINISHED']) {
+    for (const phase of ['ROUND_INTRO', 'QUESTION_OPEN', 'QUESTION_LOCKED', 'ANSWER_REVEAL', 'ROUND_LEADERBOARD', 'FINISHED']) {
       act('next');
       expect(session.phase).toBe(phase);
     }
@@ -37,7 +37,7 @@ describe('Регрессии рабочего игрового движка', ()
   });
   it('отклоняет повторный next для уже изменившегося состояния', async () => {
     const {engine, session, act} = await game();
-    act('next'); act('next');
+    act('next');
     const command = {sessionId: session.id, action: 'next' as const, expectedRevision: session.revision};
     engine.action(command, 1000);
     expect(session.phase).toBe('QUESTION_OPEN');
@@ -48,7 +48,7 @@ describe('Регрессии рабочего игрового движка', ()
   it('исключает удаленного игрока из live-статистики, сохраняя историю ответов', async () => {
     const {engine, store, quiz, session, act} = await game();
     const a = engine.join(session.code, 'Первый'), b = engine.join(session.code, 'Второй');
-    act('next'); act('next'); act('next');
+    act('next'); act('next');
     const q = quiz.rounds[0].questions[0];
     engine.submit(session.id, a.id, q.id, q.correct, 1500);
     engine.submit(session.id, b.id, q.id, q.correct, 1500);
@@ -63,7 +63,7 @@ describe('Регрессии рабочего игрового движка', ()
   it('сохраняет изменение места последнего раунда в финале', async () => {
     const {engine, quiz, session, act} = await game(true);
     const a = engine.join(session.code, 'Алиса'), b = engine.join(session.code, 'Борис');
-    act('next'); act('next'); act('next');
+    act('next'); act('next');
     const first = quiz.rounds[0].questions[0];
     engine.submit(session.id, a.id, first.id, first.correct, 1500);
     engine.submit(session.id, b.id, first.id, [first.options[1].id], 1500);

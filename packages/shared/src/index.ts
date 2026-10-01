@@ -13,6 +13,7 @@ export const quizSchema = z.object({id,title:z.string().trim().min(1).max(120),d
       if(['single','multiple','order','poll','video','prediction'].includes(question.type)&&opts.length<2)ctx.addIssue({code:'custom',message:'Нужно от 2 до 8 вариантов'});
       if(['single','multiple','order','video','prediction'].includes(question.type)&&(!question.correct.length||question.correct.some(c=>!opts.includes(c))))ctx.addIssue({code:'custom',message:'Выберите правильный ответ'});
       if(['single','video','prediction'].includes(question.type)&&question.correct.length!==1)ctx.addIssue({code:'custom',message:'Нужен один правильный ответ'});
+      if(question.type==='multiple'&&new Set(question.correct).size!==question.correct.length)ctx.addIssue({code:'custom',message:'Правильные варианты не должны повторяться'});
       if(question.type==='order'&&(question.correct.length!==opts.length||new Set(question.correct).size!==opts.length))ctx.addIssue({code:'custom',message:'Укажите полный порядок'});
       if(question.type==='text'&&!question.correct.some(c=>c.trim()))ctx.addIssue({code:'custom',message:'Укажите допустимый ответ'});
     }
@@ -28,7 +29,7 @@ export const answerValueSchema = z.union([z.string().max(500),z.number().finite(
 export type AnswerValue = z.infer<typeof answerValueSchema>;
 export const answerSchema = z.object({questionId:id,value:answerValueSchema});
 export const actions = ['next','pause','resume','lock','reveal','stats','continueVideo','leaderboard','fullLeaderboard','break','finish','toggleLobby','kick','mediaReady'] as const;
-export const actionSchema = z.object({sessionId:id,action:z.enum(actions),participantId:id.optional()});
+export const actionSchema = z.object({sessionId:id,action:z.enum(actions),participantId:id.optional(),expectedRevision:z.number().int().nonnegative().optional()});
 export type HostAction = z.infer<typeof actionSchema>;
 export interface Timer { startedAt:number; endsAt:number|null; remainingMs:number; paused:boolean; elapsedMs:number; segmentStart:number }
 export interface Participant {id:string;sessionId:string;nickname:string;score:number;correctTime:number;kicked:boolean;previousRank:number|null}

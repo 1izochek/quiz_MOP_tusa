@@ -1,15 +1,17 @@
 import { z } from 'zod';
-export const states = ['LOBBY','ROUND_INTRO','QUESTION_MEDIA','QUESTION_OPEN','QUESTION_LOCKED','ANSWER_REVEAL','ROUND_LEADERBOARD','BREAK','FINISHED'] as const;
+export const states = ['LOBBY','QUIZ_INTRO','ROUND_INTRO','QUESTION_MEDIA','QUESTION_OPEN','QUESTION_LOCKED','ANSWER_REVEAL','ROUND_LEADERBOARD','BREAK','FINISHED'] as const;
 export type Phase = typeof states[number];
 export const types = ['single','multiple','text','number','order','poll','info','video','prediction'] as const;
 export const typeLabels: Record<typeof types[number],string> = {single:'Один ответ',multiple:'Несколько ответов',text:'Текстовый ответ',number:'Числовой ответ',order:'Порядок',poll:'Опрос',info:'Информационная карточка',video:'Видео-вопрос',prediction:'Угадай продолжение'};
+export const MAX_TEXT_ANSWERS = 100;
+export function hasAnswerOptions(type: typeof types[number]) { return !['text','number','info'].includes(type); }
 const id = z.string().min(1).max(80);
 const media = z.string().regex(/^\/uploads\/[a-zA-Z0-9._-]+$/).or(z.literal('')).default('');
-export const questionSchema = z.object({id,type:z.enum(types),text:z.string().min(1).max(2000),explanation:z.string().max(4000).default(''),options:z.array(z.object({id,text:z.string().min(1).max(300)})).max(8),correct:z.array(z.string().max(500)).max(20),numericAnswer:z.number().finite().default(0),tolerance:z.number().min(0).max(1e12).default(0),duration:z.number().int().min(5).max(180),points:z.number().int().min(0).max(10000),speedBonus:z.boolean(),showStats:z.boolean(),showAnswer:z.boolean(),image:media,video:media,poster:media,pauseAtSeconds:z.number().min(0.1).max(36000).default(5)});
-export const quizSchema = z.object({id,title:z.string().trim().min(1).max(120),description:z.string().max(1000).default(''),theme:z.enum(['neon','disco','minimal','party']),cover:media,rounds:z.array(z.object({id,title:z.string().min(1).max(120),questions:z.array(questionSchema).max(200)})).max(50)}).superRefine((q,ctx)=>{
+export const questionSchema = z.object({id,type:z.enum(types),text:z.string().min(1).max(2000),explanation:z.string().max(4000).default(''),options:z.array(z.object({id,text:z.string().min(1).max(300)})).max(8),correct:z.array(z.string().max(500)).max(MAX_TEXT_ANSWERS,'Допускается не более 100 текстовых ответов'),numericAnswer:z.number().finite().default(0),tolerance:z.number().min(0).max(1e12).default(0),duration:z.number().int().min(5).max(180),points:z.number().int().min(0).max(10000),speedBonus:z.boolean(),showStats:z.boolean(),showAnswer:z.boolean(),image:media,video:media,poster:media,pauseAtSeconds:z.number().min(0.1).max(36000).default(5)});
+export const quizSchema = z.object({id,title:z.string().trim().min(1).max(120),description:z.string().max(1000).default(''),theme:z.enum(['light','neon','disco','minimal','party']),cover:media,rounds:z.array(z.object({id,title:z.string().min(1).max(120),questions:z.array(questionSchema).max(200)})).max(50)}).superRefine((q,ctx)=>{
   const ids = new Set<string>();
   for(const r of q.rounds){for(const key of [r.id,...r.questions.map(x=>x.id)]){if(ids.has(key))ctx.addIssue({code:'custom',message:'Идентификаторы должны быть уникальны'});ids.add(key);}
-    for(const question of r.questions){const opts=question.options.map(o=>o.id);if(new Set(opts).size!==opts.length)ctx.addIssue({code:'custom',message:'Повтор вариантов'});
+    for(const question of r.questions){if(question.type!=='text'&&question.correct.length>20)ctx.addIssue({code:'custom',message:'Слишком много правильных вариантов'});const opts=question.options.map(o=>o.id);if(new Set(opts).size!==opts.length)ctx.addIssue({code:'custom',message:'Повтор вариантов'});
       if(['single','multiple','order','poll','video','prediction'].includes(question.type)&&opts.length<2)ctx.addIssue({code:'custom',message:'Нужно от 2 до 8 вариантов'});
       if(['single','multiple','order','video','prediction'].includes(question.type)&&(!question.correct.length||question.correct.some(c=>!opts.includes(c))))ctx.addIssue({code:'custom',message:'Выберите правильный ответ'});
       if(['single','video','prediction'].includes(question.type)&&question.correct.length!==1)ctx.addIssue({code:'custom',message:'Нужен один правильный ответ'});
@@ -49,4 +51,4 @@ export interface ClientEvents {
 }
 export interface ServerEvents {'session:state':(state:Snapshot)=>void;'session:counts':(counts:{connected:number;participantCount:number;answerCount:number})=>void;'participant:kicked':(reason:string)=>void;'connection:replaced':()=>void;'connection:status':(message:string)=>void;}
 export function newQuestion():Question { const a=crypto.randomUUID(),b=crypto.randomUUID();return {id:crypto.randomUUID(),type:'single',text:'Новый вопрос',explanation:'',options:[{id:a,text:'Первый вариант'},{id:b,text:'Второй вариант'}],correct:[a],numericAnswer:0,tolerance:0,duration:30,points:1000,speedBonus:true,showStats:true,showAnswer:true,image:'',video:'',poster:'',pauseAtSeconds:5}; }
-export function newQuiz():Quiz{return {id:crypto.randomUUID(),title:'Новый квиз',description:'Вечер, который запомнится',theme:'neon',cover:'',rounds:[{id:crypto.randomUUID(),title:'Разминка',questions:[newQuestion()]}]};}
+export function newQuiz():Quiz{return {id:crypto.randomUUID(),title:'Новый квиз',description:'Вечер, который запомнится',theme:'light',cover:'',rounds:[{id:crypto.randomUUID(),title:'Разминка',questions:[newQuestion()]}]};}

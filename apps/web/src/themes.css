@@ -16,6 +16,7 @@ body { background: var(--background); color: var(--text); }
   --text: #2e243c; --background: #f6f2fb; --panel: #ffffff;
   --line: #34214624; --muted: #6d607e;
   --accent: #643aa4; --primary: #7544b8; --lime: #42692c;
+  --success: #325121; --danger: #a62643;
   color: var(--text);
 }
 :root[data-mode="light"][data-theme="disco"], :root[data-mode="light"] [data-theme="disco"] {
@@ -36,7 +37,7 @@ body { background: var(--background); color: var(--text); }
 }
 :root[data-mode="light"] :is(input,textarea,select) { background: #fff; border-color: var(--line); color: var(--text); }
 :root[data-mode="light"] select option { background: #fff; color: var(--text); }
-:root[data-mode="light"] :is(label,.description-input,.player-identity,.icon-button,.tiny,.stage-header>.row) { color: var(--muted); }
+:root[data-mode="light"] :is(label:not(.button,.ghost,.light-button),.description-input,.player-identity,.icon-button,.tiny,.stage-header>.row) { color: var(--muted); }
 :root[data-mode="light"] .connection { color: var(--lime); }
 :root[data-mode="light"] .connection.offline { color: #925014; }
 :root[data-mode="light"] .question-stage>p { color: var(--text); }
@@ -66,10 +67,10 @@ body { background: var(--background); color: var(--text); }
 :root[data-mode="light"] .floating-label span { color: var(--muted); }
 :root[data-mode="light"] .floating-label { text-shadow: none; }
 :root[data-mode="light"] .light-button { background: var(--primary); color: #fff; }
-:root[data-mode="light"] :is(.error,.danger,.timer.urgent) { color: #a62643; }
+:root[data-mode="light"] :is(.error,.danger,.timer.urgent) { color: var(--danger); }
 :root[data-mode="light"] :is(.timer,.stat-count) { color: var(--text); }
 :root[data-mode="light"] .leaderboard-row>span:first-child { color: var(--text); }
-:root[data-mode="light"] .timer.urgent { color:#a62643; }
+:root[data-mode="light"] .timer.urgent { color:var(--danger); }
 :root[data-mode="light"] :is(input,textarea,select):focus { border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent); }
 :root[data-mode="light"] .secondary { background: #e8f1df; color: #325121; }
 :root[data-mode="light"] .answer-option { background: #fff; border-color: var(--line); color: var(--text); }
@@ -98,7 +99,8 @@ body { background: var(--background); color: var(--text); }
 /* The display mode is independent of the palette selected for a quiz. */
 :root[data-mode="dark"], :root[data-mode="dark"] [data-theme] {
  color-scheme:dark;--text:#f4f2fa;--background:#0c0b13;--panel:#17151f;
- --line:#ffffff26;--muted:#a6a0b3;--accent:#b896ff;--primary:#8053c9;--lime:#d5fa87;color:var(--text);
+ --line:#ffffff26;--muted:#a6a0b3;--accent:#b896ff;--primary:#7544b8;--lime:#d5fa87;color:var(--text);
+ --success:#d5fa87;--danger:#ff9daa;
 }
 :root[data-mode="dark"][data-theme="disco"], :root[data-mode="dark"] [data-theme="disco"] {
  --background:#120b17;--panel:#1c1421;--accent:#ff98cf;--primary:#a32d7e;--lime:#a7efff;
@@ -125,11 +127,17 @@ body { background: var(--background); color: var(--text); }
 :root[data-mode="dark"] :is(.projection-surface,.player-page) :is(.answer-option.correct,.reveal,.answer-feedback.correct,.check-circle) { background:#24351e;color:#d5fa87;border-color:#719955; }
 :root[data-mode="dark"] :is(.projection-surface,.player-page) :is(.correct-line,.correct-mark,.reveal p) { color:#d5fa87; }
 :root[data-mode="dark"] :is(.projection-surface,.player-page) .podium-place.place-1 :is(div,.podium-avatar) { background:#443917;color:#ffe39a;border-color:#987213; }
-:root[data-mode="dark"] :is(.projection-surface,.player-page) .error { color:#ff9daa; }
-:root[data-mode="dark"] .host-controls :is(.danger,.ghost.danger) { color:#ff9daa; }
-:root[data-mode="dark"] .timer.urgent { color:#ff9daa;background:#3d1e25;border-color:#ff9daa; }
+:root[data-mode="dark"] :is(.projection-surface,.player-page) .error { color:var(--danger); }
+:root[data-mode="dark"] .host-controls :is(.danger,.ghost.danger) { color:var(--danger); }
+:root[data-mode="dark"] .timer.urgent { color:var(--danger);background:#3d1e25;border-color:var(--danger); }
 :root[data-mode="dark"] .projection-surface .brand-icon { background:color-mix(in srgb,var(--accent) 15%,var(--panel));color:var(--accent); }
 :root[data-mode="dark"] .projection-surface :is(.video-caption,.stat-bar) { background:var(--panel);color:var(--text);border-color:var(--line); }
+
+/* Status and action colours take precedence over generic label and button text. */
+:root[data-mode] .save-state.saved { color:var(--success); }
+:root[data-mode] :is(.danger,.ghost.danger,.tiny.danger) { color:var(--danger); }
+:root[data-mode] :is(.round-intro-label,.question-list-item>button>span) { color:var(--muted); }
+
 /* A white QR tile keeps scanning reliable in both modes. */
 :root[data-mode="dark"] .qr-card,:root[data-mode="dark"] .qr-card :is(p,strong,span) { background:#fff;color:#171923; }
 

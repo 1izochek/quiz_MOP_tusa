@@ -1,18 +1,36 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {create} from 'zustand';
 import {io,type Socket} from 'socket.io-client';
 import * as Dialog from '@radix-ui/react-dialog';
-import {X,AlertCircle} from 'lucide-react';
+import {X,AlertCircle,Sun,Moon} from 'lucide-react';
 import type {ClientEvents,ServerEvents,Snapshot,HostAction,AnswerValue} from '../../../packages/shared/src/index';
 export async function api<T=any>(path:string,options:RequestInit={}):Promise<T>{const res=await fetch('/api'+path,{...options,headers:{...(options.body instanceof FormData?{}:{'Content-Type':'application/json'}),...options.headers}});const data=await res.json();if(!res.ok)throw Error(data.error??'Ошибка запроса');return data;}
 export const useUI=create<{
- theme:string;setTheme:(v:string)=>void;
+ theme:string;setTheme:(v:string)=>void;mode:'light'|'dark';setMode:(v:'light'|'dark')=>void;
  saveBeforeLeave:(()=>Promise<void>)|null;notice:string;notify:(v:string)=>void;
 }>(set=>({
  theme:localStorage.getItem('pq_theme')??'neon',
  setTheme:v=>{localStorage.setItem('pq_theme',v);set({theme:v});},
+ mode:localStorage.getItem('pq_mode')==='dark'?'dark':'light',
+ setMode:v=>{localStorage.setItem('pq_mode',v);set({mode:v});},
  saveBeforeLeave:null,notice:'',notify:notice=>set({notice})
 }));
+export function ThemeRoot(){
+ const {theme,mode}=useUI();
+ useLayoutEffect(()=>{
+  document.documentElement.dataset.theme=theme;document.documentElement.dataset.mode=mode;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',getComputedStyle(document.documentElement).getPropertyValue('--background').trim());
+ },[theme,mode]);
+ useEffect(()=>{
+  const sync=(event:StorageEvent)=>{
+   if(event.key==='pq_mode'||event.key===null)useUI.setState({mode:localStorage.getItem('pq_mode')==='dark'?'dark':'light'});
+   if(event.key==='pq_theme'||event.key===null)useUI.setState({theme:localStorage.getItem('pq_theme')??'neon'});
+  };
+  window.addEventListener('storage',sync);return()=>window.removeEventListener('storage',sync);
+ },[]);
+ return null;
+}
+export function ThemeModeToggle(){const {mode,setMode}=useUI();const label=mode==='light'?'Тёмная тема':'Светлая тема';return <button className="ghost theme-toggle" aria-label={label} title={label} onClick={()=>setMode(mode==='light'?'dark':'light')}>{mode==='light'?<Moon size={17}/>:<Sun size={17}/>}<span className="mode-label">{label}</span></button>;}
 export function Toast(){const {notice,notify}=useUI();useEffect(()=>{if(notice){const t=setTimeout(()=>notify(''),6000);return()=>clearTimeout(t);}},[notice,notify]);return notice?<div className="toast" role="status"><AlertCircle size={18}/>{notice}<button aria-label="Закрыть уведомление" onClick={()=>notify('')}><X size={16}/></button></div>:null;}
 export function Modal({open,onOpenChange,title,children}: {open:boolean;onOpenChange:(v:boolean)=>void;title:string;children:React.ReactNode}){return <Dialog.Root open={open} onOpenChange={onOpenChange}><Dialog.Portal><Dialog.Overlay className="dialog-overlay"/><Dialog.Content className="dialog-content" aria-describedby={undefined}><div className="row between"><Dialog.Title>{title}</Dialog.Title><Dialog.Close asChild><button className="icon-button" aria-label="Закрыть"><X/></button></Dialog.Close></div>{children}</Dialog.Content></Dialog.Portal></Dialog.Root>;}
 export function Confirm({label,title,onConfirm,className,children}:{label?:string;title:string;onConfirm:()=>void|Promise<void>;className?:string;children?:React.ReactNode}){const [open,setOpen]=useState(false);return <><button className={className??'ghost danger'} onClick={()=>setOpen(true)} aria-label={label}>{children??label}</button><Modal open={open} onOpenChange={setOpen} title={title}><p className="muted">Это действие нельзя отменить. Продолжить?</p><div className="row end"><button className="ghost" onClick={()=>setOpen(false)}>Отмена</button><button className="button danger-fill" onClick={async()=>{try{await onConfirm();setOpen(false);}catch(e){useUI.getState().notify((e as Error).message);}}}>Подтвердить</button></div></Modal></>;}

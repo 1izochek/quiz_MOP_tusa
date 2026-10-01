@@ -153,7 +153,6 @@ async function hostAtIntro(page: Page) {
     const ack = (event: string, data: unknown) => new Promise<any>(resolve => socket.emit(event, data, resolve));
     expect((await ack('session:watch', {sessionId: game.id, role: 'host'})).ok).toBe(true);
     expect((await ack('host:action', {sessionId: game.id, action: 'next', expectedRevision: 0})).ok).toBe(true);
-    expect((await ack('host:action', {sessionId: game.id, action: 'next', expectedRevision: 1})).ok).toBe(true);
   } finally {socket.disconnect();}
   await page.goto('/host/' + game.id);
   await expect(page.getByRole('button', {name: 'Первый вопрос', exact: true})).toBeEnabled();
@@ -187,8 +186,7 @@ test('видео доступно проектору ведущего, гост�
   const screen = await page.context().newPage();
   await screen.goto('/screen/' + game.id);
   await expect(screen.locator('.game-code')).toBeVisible();
-  await page.getByRole('button', {name: 'Показать обложку', exact: true}).click();
-  await page.getByRole('button', {name: 'Первый раунд', exact: true}).click();
+  await page.getByRole('button', {name: 'Начать игру', exact: true}).click();
   await page.getByRole('button', {name: 'Первый вопрос', exact: true}).click();
   await expect.poll(() => screen.locator('video').evaluate((el: HTMLVideoElement) => el.readyState)).toBeGreaterThanOrEqual(1);
   await page.getByRole('button', {name: 'Включить видео', exact: true}).click();

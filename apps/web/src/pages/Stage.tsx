@@ -1,7 +1,7 @@
 import {useEffect,useLayoutEffect,useRef,useState,type ReactNode} from 'react';
 import {Sparkles,Users,Check,Trophy,Volume2,Smartphone} from 'lucide-react';
 import {hasAnswerOptions,type Snapshot,type PublicQuestion} from '../../../../packages/shared/src/index';
-import {useCountdown,useUI} from '../lib';
+import {useCountdown,ThemeModeToggle,useUI} from '../lib';
 
 /** Scale the complete slide only when its content exceeds the projector viewport. */
 function Slide({screen,children}:{screen:boolean;children:ReactNode}) {
@@ -27,12 +27,12 @@ export function QuizStage({state:s,role,qr,connected}:{state:Snapshot;role:'host
   <header className="stage-header">
    <div className="brand"><span className="brand-icon"><Sparkles/></span>party<span>quiz</span></div>
    <span>{s.phase==='LOBBY'?'ПРИСОЕДИНЯЙТЕСЬ К ИГРЕ':s.phase==='QUIZ_INTRO'?'СЕГОДНЯ ИГРАЕМ ВМЕСТЕ':s.phase==='FINISHED'?'ФИНАЛ':`${s.roundTitle} · ${s.roundIndex+1}/${s.roundCount}`}</span>
-   <div className="row"><Users size={22}/>{s.participantCount}</div>
+   <div className="row">{screen&&<ThemeModeToggle/>}<Users size={22}/>{s.participantCount}</div>
   </header>
   <Slide screen={screen}>
    {s.phase==='LOBBY'?<div className="stage-lobby">
-    <div><span className="eyebrow">ДОБРО ПОЖАЛОВАТЬ</span><h1>{s.title}</h1><p>{s.description}</p><div className="pill"><span className="status-dot"/>{s.participantCount} гостей уже в игре</div><p className="lobby-instruction">Откройте камеру телефона<br/>и отсканируйте QR-код.</p></div>
-    <div className="qr-card">{qr&&<img src={qr} alt="QR-код для входа в игру"/>}<p>Код игры</p><strong className="game-code">{s.code}</strong><span>{s.joinUrl.split('/play')[0]}/play</span></div>
+    <div className="qr-card">{qr&&<img src={qr} alt="QR-код для входа в игру"/>}<p>Сканируйте и присоединяйтесь</p><strong className="game-code">{s.code}</strong><span>{s.joinUrl.split('/play')[0]}/play</span></div>
+    <div className="lobby-copy"><span className="eyebrow">ВАШ ВЕЧЕР НАЧИНАЕТСЯ</span><h1>{s.title}</h1>{s.cover&&<img className="lobby-cover" src={s.cover} alt="Обложка квиза"/>}{s.description&&<p>{s.description}</p>}<div className="lobby-meta"><span className="pill"><span className="status-dot"/>{s.participantCount} гостей уже в игре</span><span>{s.roundCount} {s.roundCount===1?'раунд':s.roundCount<5?'раунда':'раундов'}</span></div></div>
    </div>:s.phase==='QUIZ_INTRO'?<div className={`quiz-cover-slide ${s.cover?'has-cover':''}`}>
     <div className="cover-copy"><span className="eyebrow">ВАШ ВЕЧЕР НАЧИНАЕТСЯ</span><h1>{s.title}</h1>{s.description&&<p>{s.description}</p>}<div className="cover-meta"><span>{s.roundCount} {s.roundCount===1?'раунд':s.roundCount<5?'раунда':'раундов'}</span><span>Играем вместе</span></div></div>
     {s.cover&&<img className="quiz-cover-image" src={s.cover} alt="Обложка квиза"/>}

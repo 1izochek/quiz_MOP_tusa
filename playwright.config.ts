@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'tests',testMatch:'**/*.spec.ts',timeout:45000,workers:1,use:{baseURL:'http://127.0.0.1:3099',headless:true,trace:'retain-on-failure',screenshot:'only-on-failure'},webServer:{command:'pnpm exec tsx apps/server/src/index.ts',url:'http://127.0.0.1:3099/api/health',reuseExistingServer:false,env:{ADMIN_PASSWORD:'test-only-party-password',PORT:'3099',DATA_DIR:'work/e2e-data',PUBLIC_BASE_URL:'http://127.0.0.1:3099',NODE_ENV:'production'}}});

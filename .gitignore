@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+data/*
+!data/.gitkeep
+work/
+test-results/
+playwright-report/
+*.log

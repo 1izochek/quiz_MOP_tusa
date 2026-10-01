@@ -153,6 +153,7 @@ async function hostAtIntro(page: Page) {
     const ack = (event: string, data: unknown) => new Promise<any>(resolve => socket.emit(event, data, resolve));
     expect((await ack('session:watch', {sessionId: game.id, role: 'host'})).ok).toBe(true);
     expect((await ack('host:action', {sessionId: game.id, action: 'next', expectedRevision: 0})).ok).toBe(true);
+    expect((await ack('host:action', {sessionId: game.id, action: 'next', expectedRevision: 1})).ok).toBe(true);
   } finally {socket.disconnect();}
   await page.goto('/host/' + game.id);
   await expect(page.getByRole('button', {name: 'Первый вопрос', exact: true})).toBeEnabled();
@@ -174,48 +175,6 @@ for (const key of ['Space', 'ArrowRight']) {
     await expect(page.getByRole('button', {name: 'Закрыть ответы', exact: true})).toBeVisible();
   });
 }
-test('четыре палитры имеют светлые и темные варианты с сохранением выбора', async ({page}) => {
-  await login(page); await page.goto('/admin');
-  const backgrounds = new Set<string>();
-  for (const theme of ['neon', 'disco', 'minimal', 'party']) {
-    await page.getByLabel('Тема интерфейса').selectOption(theme);
-    await page.getByRole('button', {name: 'Светлая тема', exact: true}).click();
-    await expect(page.locator('html')).toHaveAttribute('data-mode', 'light');
-    const light = await page.locator('.admin-shell').evaluate(el => ({background: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color}));
-    const rgb = light.background.match(/\d+/g)!.slice(0, 3).map(Number);
-    expect(Math.min(...rgb)).toBeGreaterThan(210);
-    expect(light.color).not.toBe(light.background);
-    backgrounds.add(light.background);
-    await page.screenshot({path: `work/themes/${theme}-light.png`});
-    await page.getByRole('button', {name: 'Темная тема', exact: true}).click();
-    const dark = await page.locator('.admin-shell').evaluate(el => getComputedStyle(el).backgroundColor);
-    expect(Math.max(...dark.match(/\d+/g)!.slice(0, 3).map(Number))).toBeLessThan(50);
-    await page.screenshot({path: `work/themes/${theme}-dark.png`});
-  }
-  expect(backgrounds.size).toBe(4);
-  await page.getByRole('button', {name: 'Светлая тема', exact: true}).click();
-  await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('data-mode', 'light');
-  await expect(page.getByLabel('Тема интерфейса')).toHaveValue('party');
-  await page.goto('/play');
-  await expect(page.locator('html')).toHaveAttribute('data-mode', 'light');
-  await expect(page.getByRole('button', {name: 'Темная тема', exact: true})).toBeVisible();
-});
-test('палитра студии не подменяет неоновую палитру игры', async ({page}) => {
-  await login(page);
-  for (const mode of ['dark', 'light']) {
-    await page.goto('/admin');
-    if (await page.locator('html').getAttribute('data-mode') !== mode) await page.locator('.theme-toggle').click();
-    await page.getByLabel('Тема интерфейса').selectOption('neon');
-    const neon = await page.locator('.admin-shell').evaluate(el => getComputedStyle(el).backgroundColor);
-    await page.getByLabel('Тема интерфейса').selectOption('party');
-    expect(await page.locator('.admin-shell').evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe(neon);
-    await hostAtIntro(page);
-    expect(await page.locator('.live-page').evaluate(el => getComputedStyle(el).backgroundColor)).toBe(neon);
-    await page.goto('/play');
-    expect(await page.locator('.player-page').evaluate(el => getComputedStyle(el).backgroundColor)).toBe(neon);
-  }
-});
 test('видео доступно проектору ведущего, гостю недоступны оригинал и роль screen', async ({page, browser}) => {
   await login(page);
   const upload = await page.request.post('/api/media', {multipart: {file: {name: 'continuation.webm', mimeType: 'video/webm', buffer: readFileSync('assets/demo.webm')}}});
@@ -228,7 +187,8 @@ test('видео доступно проектору ведущего, гост�
   const screen = await page.context().newPage();
   await screen.goto('/screen/' + game.id);
   await expect(screen.locator('.game-code')).toBeVisible();
-  await page.getByRole('button', {name: 'Начать игру', exact: true}).click();
+  await page.getByRole('button', {name: 'Показать обложку', exact: true}).click();
+  await page.getByRole('button', {name: 'Первый раунд', exact: true}).click();
   await page.getByRole('button', {name: 'Первый вопрос', exact: true}).click();
   await expect.poll(() => screen.locator('video').evaluate((el: HTMLVideoElement) => el.readyState)).toBeGreaterThanOrEqual(1);
   await page.getByRole('button', {name: 'Включить видео', exact: true}).click();

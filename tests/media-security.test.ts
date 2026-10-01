@@ -29,6 +29,7 @@ describe('Авторизация проектора и полных видеоф
     sessionId = game.id;
     server.engine.action({sessionId, action: 'next'});
     server.engine.action({sessionId, action: 'next'});
+    server.engine.action({sessionId, action: 'next'});
     url = 'http://127.0.0.1:' + await server.listen(0);
     const login = await fetch(url + '/api/login', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({password})});
     cookie = login.headers.get('set-cookie')!.split(';')[0];
